@@ -48,13 +48,15 @@ public class JsonSchemaValidator {
 
   public JsonSchemaValidator(Map jsonSchema) {
     this.validators = new LinkedList<>();
-    for (Object fname : jsonSchema.keySet()) {
+    for (Object entry : jsonSchema.entrySet()) {
+      Object fname = ((Map.Entry)entry).getKey();
+      Object value = ((Map.Entry)entry).getValue();
       if (KNOWN_FNAMES.contains(fname.toString())) continue;
 
       Function<Pair<Map, Object>, Validator> initializeFunction = VALIDATORS.get(fname.toString());
       if (initializeFunction == null) throw new RuntimeException("Unknown key : " + fname);
 
-      this.validators.add(initializeFunction.apply(new Pair<>(jsonSchema, jsonSchema.get(fname))));
+      this.validators.add(initializeFunction.apply(new Pair<>(jsonSchema, value)));
     }
   }
 
@@ -281,13 +283,15 @@ class PropertiesValidator extends Validator<Map<String, Map>> {
     if (o instanceof Map) {
       @SuppressWarnings({"rawtypes"})
       Map map = (Map) o;
-      for (Object key : map.keySet()) {
+      for (Object entry : map.entrySet()) {
+        Object key = ((Map.Entry) entry).getKey();
         JsonSchemaValidator jsonSchema = jsonSchemas.get(key.toString());
         if (jsonSchema == null && !additionalProperties) {
           errs.add("Unknown field '" + key + "' in object : " + Utils.toJSONString(o));
           return false;
         }
-        if (jsonSchema != null && !jsonSchema.validate(map.get(key), errs)) {
+        Object value = ((Map.Entry) entry).getValue();
+        if (jsonSchema != null && !jsonSchema.validate(value, errs)) {
           return false;
         }
       }
